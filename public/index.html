@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azezobet - Play & Win</title>
+    <style>
+        :root { --bg-color: #0a0b10; --card-bg: #1c1f2e; --primary: #ff9900; --success: #28a745; --danger: #dc3545; --text-main: #ffffff; --text-muted: #888888; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: #11131c; border-bottom: 1px solid #333; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary); font-style: italic; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .balance { color: var(--success); font-weight: bold; font-size: 16px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #fff; }
+        .btn-deposit { background-color: var(--success); }
+        .btn-logout { background-color: var(--danger); }
+        .tabs { display: flex; justify-content: space-around; background-color: var(--card-bg); padding: 10px; margin: 10px; border-radius: 8px; }
+        .tab { color: var(--text-muted); cursor: pointer; font-weight: bold; padding: 5px 10px; }
+        .tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .container { padding: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .card { background-color: var(--card-bg); border-radius: 10px; overflow: hidden; text-align: center; cursor: pointer; padding: 10px; }
+        .card img { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; }
+        .card p { margin-top: 8px; font-size: 12px; font-weight: bold; }
+        .bet-section { background-color: var(--card-bg); margin: 10px; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+        .bet-section input { width: 80px; padding: 8px; border-radius: 5px; border: none; text-align: center; font-weight: bold; }
+        #auth-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; padding: 20px; }
+        .auth-box { background-color: var(--card-bg); padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; }
+        .auth-box h2 { text-align: center; margin-bottom: 20px; color: var(--primary); }
+        .auth-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; }
+        .auth-box button { width: 100%; padding: 12px; font-size: 18px; background-color: var(--primary); border-radius: 8px; }
+        .switch-auth { text-align: center; margin-top: 15px; color: var(--text-muted); cursor: pointer; text-decoration: underline; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: var(--card-bg); padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
+        .modal-content h3 { color: var(--primary); text-align: center; margin-bottom: 15px; }
+        .telebirr-num { font-size: 22px; font-weight: bold; text-align: center; background: #333; padding: 10px; border-radius: 8px; margin: 10px 0; }
+        .modal-input { width: 100%; padding: 10px; margin: 5px 0 15px 0; border-radius: 5px; border: none; }
+        .modal-actions { display: flex; gap: 10px; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .admin-table th, .admin-table td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 14px;}
+        .admin-table th { background-color: #333; }
+        .admin-table img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h2 class="logo" style="text-align:center; margin-bottom:20px;">Azezobet</h2>
+            <input type="text" id="auth-phone" placeholder="ስልክ ቁጥር">
+            <input type="password" id="auth-pass" placeholder="ፓስወርድ">
+            <button class="btn" id="auth-btn" onclick="handleAuth()">ግባ / ተመዝገብ</button>
+            <div class="switch-auth" onclick="toggleAuthMode()" id="auth-switch-text">አዲስ ነዎት? እዚህ ይመዝገቡ</div>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <header>
+            <div class="logo">Azezobet</div>
+            <div class="user-info">
+                <span class="balance" id="user-balance">0.00 ብር</span>
+                <button class="btn btn-deposit" onclick="openDepositModal()">+ Deposit</button>
+                <button class="btn btn-logout" onclick="logout()">ውጣ</button>
+            </div>
+        </header>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('providers')">Providers</div>
+            <div class="tab" onclick="switchTab('admin')" style="color: #ff9900;">Admin Panel</div>
+        </div>
+        <div class="bet-section" id="bet-section">
+            <label>የውርርድ መጠን (1-50)፡</label>
+            <input type="number" id="bet-amount" value="1" min="1" max="50">
+        </div>
+        <div class="container">
+            <div id="providers-view" class="grid"></div>
+            <div id="games-view" class="hidden">
+                <button class="btn" style="background:#333; margin-bottom: 15px;" onclick="backToProviders()">&lt; ወደ ኋላ</button>
+                <h3 id="selected-provider-name" style="margin-bottom:10px; color:var(--primary);"></h3>
+                <div class="grid" id="games-grid"></div>
+            </div>
+            <div id="admin-view" class="hidden">
+                <h3 style="color:var(--primary);">የሚጠባበቁ ክፍያዎች</h3>
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ስልክ</th><th>መጠን</th><th>ደረሰኝ</th><th>ስክሪን ሻት</th><th>ተግባር</th></tr>
+                    </thead>
+                    <tbody id="admin-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="deposit-modal">
+        <div class="modal-content">
+            <h3>ገንዘብ ማስገቢያ (Telebirr)</h3>
+            <p style="font-size:12px; color:#aaa;">ወደዚህ ቁጥር ያስተላልፉ (50-1000 ብር)፡</p>
+            <div class="telebirr-num">0966811102</div>
+            <input type="number" class="modal-input" id="dep-amount" placeholder="የላኩት ገንዘብ መጠን">
+            <input type="text" class="modal-input" id="dep-txn" placeholder="የደረሰኝ ቁጥር">
+            <input type="file" class="modal-input" id="dep-image" accept="image/*" style="background:transparent; color:white;">
+            <div class="modal-actions">
+                <button class="btn" style="background:#555; flex:1;" onclick="closeDepositModal()">ሰርዝ</button>
+                <button class="btn btn-deposit" style="flex:1;" onclick="submitDeposit()">አረጋግጥ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "/api"; 
+
+        const providersData = [
+            { id: 'p1', name: 'SPRIBE', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Spribe_logo.png/320px-Spribe_logo.png', games: ['Aviator', 'JetX', 'Mines'] },
+            { id: 'p2', name: 'PRAGMATIC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Pragmatic_Play_logo.svg/320px-Pragmatic_Play_logo.svg.png', games: ['Fortune Dragon', 'Gates of Olympus'] }
+        ];
+
+        let isLoginMode = true;
+        let currentUser = JSON.parse(localStorage.getItem('azezobet_currentUser')) || null;
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-btn').innerText = isLoginMode ? "ግባ" : "ተመዝገብ";
+            document.getElementById('auth-switch-text').innerText = isLoginMode ? "አዲስ ነዎት? እዚህ ይመዝገቡ" : "አካውንት አለዎት? እዚህ ይግቡ";
+        }
+
+        async function handleAuth() {
+            const phone = document.getElementById('auth-phone').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+            if (!phone || !pass) return alert("ስልክ ቁጥር እና ፓስወርድ ያስገቡ።");
+            
+            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password: pass })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('azezobet_currentUser', JSON.stringify(currentUser));
+                    showMainApp();
+                } else { alert(data.message || "ስህተት"); }
+            } catch (error) { alert("ኢንተርኔት ወይም ሰርቨር ያረጋግጡ"); }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('azezobet_currentUser');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            updateBalanceUI();
+            renderProviders();
+            renderAdminTable();
+        }
+
+        function updateBalanceUI() {
+            document.getElementById('user-balance').innerText = currentUser.balance.toFixed(2) + " ብር";
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('providers-view').classList.add('hidden');
+            document.getElementById('games-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+
+            if (tabName === 'providers') {
+                document.getElementById('providers-view').classList.remove('hidden');
+                document.getElementById('bet-section').classList.remove('hidden');
+            } else if (tabName === 'admin') {
+                document.getElementById('admin-view').classList.remove('hidden');
+                document.getElementById('bet-section').classList.add('hidden');
+                renderAdminTable();
+            }
+        }
+
+        function renderProviders() {
+            const grid = document.getElementById('providers-view');
+            grid.innerHTML = '';
+            providersData.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.onclick = () => openProviderGames(p);
+                div.innerHTML = `<img src="${p.logo}" style="background:#000; object-fit:contain;"><p>${p.name}</p>`;
+                grid.appendChild(div);
+            });
+        }
+
+        function openProviderGames(provider) {
+            document.getElementById('providers-view').classList.add('hidden');
+            document.getElementById('games-view').classList.remove('hidden');
+            document.getElementById('selected-provider-name').innerText = provider.name;
+            const grid = document.getElementById('games-grid');
+            grid.innerHTML = '';
+            provider.games.forEach(game => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.onclick = () => playGame(game);
+                div.innerHTML = `<img src="https://via.placeholder.com/150/FF9900/000000?text=${game}"><p>${game}</p>`;
+                grid.appendChild(div);
+            });
+        }
+
+        function backToProviders() {
+            document.getElementById('providers-view').classList.remove('hidden');
+            document.getElementById('games-view').classList.add('hidden');
+        }
+
+        async function playGame(gameName) {
+            const betAmount = parseFloat(document.getElementById('bet-amount').value);
+            if (isNaN(betAmount) || betAmount < 1 || betAmount > 50) return alert("ውርርድ 1-50 ብር መሆን አለበት።");
+            if (currentUser.balance < betAmount) return alert("ባላንስዎ አይበቃም።");
+            
+            try {
+                const response = await fetch(`${API_URL}/play`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser._id, betAmount })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    currentUser.balance = data.newBalance;
+                    localStorage.setItem('azezobet_currentUser', JSON.stringify(currentUser));
+                    updateBalanceUI();
+                    alert(data.isWin ? `🎉 አሸንፈዋል! ${data.winAmount} ብር` : `😔 ተሸንፈዋል!`);
+                } else { alert(data.message); }
+            } catch (error) { alert("ሰርቨር ጋር መገናኘት አልተቻለም"); }
+        }
+
+        function openDepositModal() { document.getElementById('deposit-modal').style.display = 'flex'; }
+        function closeDepositModal() { document.getElementById('deposit-modal').style.display = 'none'; }
+
+        async function submitDeposit() {
+            const amount = parseFloat(document.getElementById('dep-amount').value);
+            const txn = document.getElementById('dep-txn').value.trim();
+            const imageFile = document.getElementById('dep-image').files[0];
+            if (!amount || !txn || !imageFile) return alert("ሁሉንም ያስገቡ።");
+            if (amount < 50 || amount > 1000) return alert("50-1000 ብር ብቻ");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const response = await fetch(`${API_URL}/deposit`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser._id, amount, transactionId: txn, screenshotBase64: e.target.result })
+                    });
+                    const data = await response.json();
+                    alert(data.message);
+                    closeDepositModal();
+                    renderAdminTable();
+                } catch (error) { alert("መላክ አልተቻለም"); }
+            };
+            reader.readAsDataURL(imageFile);
+        }
+
+        async function renderAdminTable() {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">በመጫን ላይ...</td></tr>';
+            try {
+                const response = await fetch(`${API_URL}/admin/deposits`);
+                const data = await response.json();
+                tbody.innerHTML = '';
+                if (!data.deposits || data.deposits.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">ምንም የለም።</td></tr>`;
+                    return;
+                }
+                data.deposits.forEach(txn => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${txn.userId?.phone || 'Unknown'}</td><td>${txn.amount} ብር</td><td>${txn.transactionId}</td><td><img src="${txn.screenshotBase64}" onclick="window.open(this.src)"></td><td><button class="btn btn-deposit" onclick="approveDeposit('${txn._id}')">✓</button></td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) { tbody.innerHTML = '<tr><td colspan="5">ስህተት</td></tr>'; }
+        }
+
+        async function approveDeposit(txnId) {
+            if (!confirm("እርግጠኛ ነዎት?")) return;
+            try {
+                const response = await fetch(`${API_URL}/admin/approve-deposit/${txnId}`, { method: 'POST' });
+                const data = await response.json();
+                alert(data.message);
+                renderAdminTable();
+                if(data.success) {
+                    const freshRes = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: currentUser.phone, password: prompt("ፓስወርድዎን ያስገቡ") }) 
+                    });
+                    const freshData = await freshRes.json();
+                    if(freshData.success) { currentUser.balance = freshData.user.balance; updateBalanceUI(); }
+                }
+            } catch (error) { alert("ስህተት"); }
+        }
+
+        window.onload = function() { if (currentUser) showMainApp(); };
+    </script>
+</body>
+</html>
